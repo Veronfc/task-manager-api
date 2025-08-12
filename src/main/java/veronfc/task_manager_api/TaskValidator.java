@@ -7,23 +7,25 @@ import java.util.concurrent.TimeUnit;
 
 import org.springframework.stereotype.Component;
 
+import jakarta.validation.ValidationException;
+
 @Component
-class Validator {
+class TaskValidator {
     private final TaskRepository db;
 
-    Validator(TaskRepository db) {
+    TaskValidator(TaskRepository db) {
         this.db = db;
     }
 
     public UUID checkIdValidity(String strId) {
         if (strId == null || strId.isBlank()) {
-            throw new IllegalArgumentException("Task ID must not be empty");
+            throw new ValidationException("Task ID must not be empty");
         }
 
         try {
             return UUID.fromString(strId);
         } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("Task ID must be a UUID");
+            throw new ValidationException("Task ID must be a UUID");
         }
     }
 
@@ -31,13 +33,13 @@ class Validator {
         Task foundTask = db.findByTitle(task.getTitle());
 
         if (foundTask != null && foundTask.getId() != task.getId()) {
-            throw new IllegalArgumentException("Task title must be unique");
+            throw new ValidationException("Task title must be unique");
         }
     }
 
     public void checkDueDateValidity(LocalDateTime dueDate) {
         if (TimeUnit.HOURS.convert(Duration.between(LocalDateTime.now(), dueDate).getSeconds(), TimeUnit.SECONDS) < 12) {
-            throw new IllegalArgumentException("Task due date must be at least 12 hours in the future");
+            throw new ValidationException("Task due date must be at least 12 hours in the future");
         }
     }
 }

@@ -2,7 +2,6 @@ package veronfc.task_manager_api;
 
 import java.util.UUID;
 
-import org.hibernate.query.IllegalQueryOperationException;
 import org.springframework.stereotype.Service;
 
 interface ITaskService {
@@ -15,9 +14,9 @@ interface ITaskService {
 @Service
 class TaskService implements ITaskService {
     private final TaskRepository db;
-    private final Validator validator;
+    private final TaskValidator validator;
 
-    TaskService(TaskRepository db, Validator validator) {
+    TaskService(TaskRepository db, TaskValidator validator) {
         this.db = db;
         this.validator = validator;
     }
@@ -37,12 +36,13 @@ class TaskService implements ITaskService {
 
     public Task updateTask(Task updatedtask) {
         validator.checkTitleValidity(updatedtask);
+        
+        UUID id = updatedtask.getId();
 
-        Task task = db.findById(updatedtask.getId()).orElseThrow(() -> new TaskNotFoundException(updatedtask.getId()));
+        Task task = db.findById(id).orElseThrow(() -> new TaskNotFoundException(id));
 
         if (task.getStatus() == TaskStatus.COMPLETE) {
-            //TODO use proper exception
-            throw new IllegalQueryOperationException("Task is marked as 'Complete' and can not be updated further");
+            throw new TaskStatusException(String.format("Task with ID: %s is marked as 'Complete' and can not be updated further", id.toString()));
         }
         // validator.checkDueDateValidity(updatedtask.getDueDate());
 
@@ -55,8 +55,7 @@ class TaskService implements ITaskService {
         Task task = db.findById(id).orElseThrow(() -> new TaskNotFoundException(id));
 
         if (task.getStatus() == TaskStatus.ARCHIVED) {
-            //TODO use proper exception
-            throw new IllegalQueryOperationException("Task is marked as 'Archived' and can not be deleted");
+            throw new TaskStatusException(String.format("Task with ID: %s is marked as 'Archived' and can not be deleted", strId));
         }
 
         db.deleteById(id);

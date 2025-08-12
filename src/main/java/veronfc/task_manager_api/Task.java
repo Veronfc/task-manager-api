@@ -9,6 +9,7 @@ import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotEmpty;
@@ -28,7 +29,7 @@ import lombok.ToString;
 @EqualsAndHashCode
 @ToString
 class Task {
-    @Id @GeneratedValue @UuidGenerator
+    @Id @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @NotEmpty(message = "Task title must not be empty")
