@@ -22,7 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import jakarta.validation.ValidationException;
 
 @ExtendWith(MockitoExtension.class)
-class TaskServiceTests {
+class TaskServiceUnitTests {
     @Mock
     private TaskRepository db;
 

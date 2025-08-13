@@ -2,6 +2,7 @@ package veronfc.task_manager_api;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -30,10 +31,14 @@ class TaskValidator {
     }
 
     public void checkTitleValidity(Task task) {
-        Task foundTask = db.findByTitle(task.getTitle());
+        Task foundTask;
 
-        if (foundTask != null && foundTask.getId() != task.getId()) {
-            throw new ValidationException("Task title must be unique");
+        foundTask = db.findByTitle(task.getTitle()).orElse(null);
+
+        if (foundTask != null) {
+            if (task.getId() == null || !foundTask.getId().equals(task.getId())) {
+                throw new ValidationException("Task title must be unique");
+            }
         }
     }
 
