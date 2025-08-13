@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,6 +12,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -39,7 +39,7 @@ class Task {
     @Size(max = 2000, message = "Task description must not be more than 2000 characters")
     private String description;
 
-    @NotEmpty(message = "Task status must not be empty")
+    @NotNull(message = "Task status must not be empty")
     private TaskStatus status = TaskStatus.BACKLOG;
 
     @Future(message = "Task due date must not be in the past or present")

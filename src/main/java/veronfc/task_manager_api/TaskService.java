@@ -13,11 +13,11 @@ interface ITaskService {
 
 @Service
 class TaskService implements ITaskService {
-    private final TaskRepository db;
+    private final TaskRepository repository;
     private final TaskValidator validator;
 
-    TaskService(TaskRepository db, TaskValidator validator) {
-        this.db = db;
+    TaskService(TaskRepository repository, TaskValidator validator) {
+        this.repository = repository;
         this.validator = validator;
     }
 
@@ -25,13 +25,13 @@ class TaskService implements ITaskService {
         validator.checkTitleValidity(task);
         validator.checkDueDateValidity(task.getDueDate());
 
-        return db.save(task);
+        return repository.save(task);
     }
 
     public Task retrieveTask(String strId) {
         UUID id = validator.checkIdValidity(strId);
 
-        return db.findById(id).orElseThrow(() -> new TaskNotFoundException(id));
+        return repository.findById(id).orElseThrow(() -> new TaskNotFoundException(id));
     }
 
     public Task updateTask(Task updatedtask) {
@@ -39,25 +39,25 @@ class TaskService implements ITaskService {
         
         UUID id = updatedtask.getId();
 
-        Task task = db.findById(id).orElseThrow(() -> new TaskNotFoundException(id));
+        Task task = repository.findById(id).orElseThrow(() -> new TaskNotFoundException(id));
 
         if (task.getStatus() == TaskStatus.COMPLETE) {
             throw new TaskStatusException(String.format("Task with ID: %s is marked as 'Complete' and can not be updated further", id.toString()));
         }
         // validator.checkDueDateValidity(updatedtask.getDueDate());
 
-        return db.save(updatedtask);
+        return repository.save(updatedtask);
     }
 
     public void deleteTask(String strId) {
         UUID id = validator.checkIdValidity(strId);
 
-        Task task = db.findById(id).orElseThrow(() -> new TaskNotFoundException(id));
+        Task task = repository.findById(id).orElseThrow(() -> new TaskNotFoundException(id));
 
         if (task.getStatus() == TaskStatus.ARCHIVED) {
             throw new TaskStatusException(String.format("Task with ID: %s is marked as 'Archived' and can not be deleted", strId));
         }
 
-        db.deleteById(id);
+        repository.deleteById(id);
     }
 }

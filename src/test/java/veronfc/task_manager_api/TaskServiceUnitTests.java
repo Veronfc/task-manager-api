@@ -24,7 +24,7 @@ import jakarta.validation.ValidationException;
 @ExtendWith(MockitoExtension.class)
 class TaskServiceUnitTests {
     @Mock
-    private TaskRepository db;
+    private TaskRepository repository;
 
     @Mock
     private TaskValidator validator;
@@ -33,7 +33,7 @@ class TaskServiceUnitTests {
     private TaskService service;
 
     @Test
-    void createTask_shouldCreate_whenTitleIsUniqueAndDueDateIsAtleast12HoursInFuture() {
+    void createTask_persistsTask_whenTitleIsUniqueAndDueDateIsAtleast12HoursInFuture() {
         LocalDateTime dueDate = LocalDateTime.now();
 
         Task task = new Task();
@@ -41,16 +41,16 @@ class TaskServiceUnitTests {
 
         doNothing().when(validator).checkTitleValidity(task);
         doNothing().when(validator).checkDueDateValidity(dueDate);
-        when(db.save(task)).thenReturn(task);
+        when(repository.save(task)).thenReturn(task);
 
         Task result = service.createTask(task);
         assertEquals(task, result);
 
-        verify(db).save(task);
+        verify(repository).save(task);
     }
 
     @Test
-    void createTask_shouldThrowException_whenTitleIsNotUnique() {
+    void createTask_throwsException_whenTitleIsNotUnique() {
         Task task = new Task();
 
         doThrow(new ValidationException("Task title must be unique")).when(validator).checkTitleValidity(task);
@@ -59,11 +59,11 @@ class TaskServiceUnitTests {
             service.createTask(task);
         });
 
-        verify(db, never()).save(any());
+        verify(repository, never()).save(any());
     }
 
     @Test
-    void createTask_shouldThrowException_whenDueDateIsNot12HoursInFuture() {
+    void createTask_throwsException_whenDueDateIsNot12HoursInFuture() {
         LocalDateTime dueDate = LocalDateTime.now();
 
         Task task = new Task();
@@ -77,42 +77,42 @@ class TaskServiceUnitTests {
             service.createTask(task);
         });
 
-        verify(db, never()).save(any());
+        verify(repository, never()).save(any());
     }
 
     @Test
-    void retrieveTask_shouldRetrieve_whenTaskExists() {
+    void retrieveTask_returnsTask_whenTaskExists() {
         String strId = "fe536052-58dc-40f7-9efa-3a88b1eb82da";
         UUID id = UUID.fromString(strId);
 
         Task task = new Task();
 
         when(validator.checkIdValidity(strId)).thenReturn(id);
-        when(db.findById(id)).thenReturn(Optional.of(task));
+        when(repository.findById(id)).thenReturn(Optional.of(task));
 
         Task result = service.retrieveTask(strId);
         assertEquals(task, result);
 
-        verify(db).findById(id);
+        verify(repository).findById(id);
     }
 
     @Test
-    void retrieveTask_shouldThrowException_whenTaskIsNotFound() {
+    void retrieveTask_throwsException_whenTaskIsNotFound() {
         String strId = "aa07cf6a-127a-43a8-bb54-4d45b76e6e73";
         UUID id = UUID.fromString(strId);
 
         when(validator.checkIdValidity(strId)).thenReturn(id);
-        when(db.findById(id)).thenReturn(Optional.empty());
+        when(repository.findById(id)).thenReturn(Optional.empty());
 
         assertThrows(TaskNotFoundException.class, () -> {
             service.retrieveTask(strId);
         });
 
-        verify(db).findById(id);
+        verify(repository).findById(id);
     }
 
     @Test
-    void updateTask_shouldUpdate_whenTitleIsUniqueAndStatusIsNotComplete() {
+    void updateTask_persistsUpdatedTask_whenTitleIsUniqueAndStatusIsNotComplete() {
         UUID id = UUID.randomUUID();
 
         Task updatedTask = new Task();
@@ -122,17 +122,17 @@ class TaskServiceUnitTests {
         task.setStatus(TaskStatus.IN_PROGRESS);
 
         doNothing().when(validator).checkTitleValidity(updatedTask);
-        when(db.findById(id)).thenReturn(Optional.of(task));
-        when(db.save(updatedTask)).thenReturn(updatedTask);
+        when(repository.findById(id)).thenReturn(Optional.of(task));
+        when(repository.save(updatedTask)).thenReturn(updatedTask);
 
         Task result = service.updateTask(updatedTask);
         assertEquals(updatedTask, result);
 
-        verify(db).save(updatedTask);
+        verify(repository).save(updatedTask);
     }
 
     @Test
-    void updateTask_shouldThrowException_whenTitleIsNotUnique() {
+    void updateTask_throwsException_whenTitleIsNotUnique() {
         UUID id = UUID.randomUUID();
 
         Task updatedTask = new Task();
@@ -144,11 +144,11 @@ class TaskServiceUnitTests {
             service.updateTask(updatedTask);
         });
 
-        verify(db, never()).save(any());
+        verify(repository, never()).save(any());
     }
 
     @Test
-    void updateTask_shouldThrowException_whenStatusIsComplete() {
+    void updateTask_throwsException_whenStatusIsComplete() {
         UUID id = UUID.randomUUID();
 
         Task updatedTask = new Task();
@@ -158,34 +158,34 @@ class TaskServiceUnitTests {
         task.setStatus(TaskStatus.COMPLETE);
 
         doNothing().when(validator).checkTitleValidity(updatedTask);
-        when(db.findById(id)).thenReturn(Optional.of(task));
+        when(repository.findById(id)).thenReturn(Optional.of(task));
 
         assertThrows(TaskStatusException.class, () -> {
             service.updateTask(updatedTask);
         });
 
-        verify(db, never()).save(any());
+        verify(repository, never()).save(any());
     }
 
     @Test
-    void updateTask_shouldThrowException_whenTaskIsNotFound() {
+    void updateTask_throwsException_whenTaskIsNotFound() {
         UUID id = UUID.randomUUID();
 
         Task updatedTask = new Task();
         updatedTask.setId(id);
 
         doNothing().when(validator).checkTitleValidity(updatedTask);
-        when(db.findById(id)).thenReturn(Optional.empty());
+        when(repository.findById(id)).thenReturn(Optional.empty());
 
         assertThrows(TaskNotFoundException.class, () -> {
             service.updateTask(updatedTask);
         });
 
-        verify(db, never()).save(any());
+        verify(repository, never()).save(any());
     }
 
     @Test
-    void deleteTask_shouldDelete_whenTaskExistsAndStatusIsNotArchived() {
+    void deleteTask_removesTask_whenTaskExistsAndStatusIsNotArchived() {
         String strId = "7aecd703-0d6b-4c62-92d8-7a42221d02a1";
         UUID id = UUID.fromString(strId);
 
@@ -194,15 +194,15 @@ class TaskServiceUnitTests {
         task.setStatus(TaskStatus.IN_PROGRESS);
 
         when(validator.checkIdValidity(strId)).thenReturn(id);
-        when(db.findById(id)).thenReturn(Optional.of(task));
+        when(repository.findById(id)).thenReturn(Optional.of(task));
 
         service.deleteTask(strId);
 
-        verify(db).deleteById(id);
+        verify(repository).deleteById(id);
     }
 
     @Test
-    void deleteTask_shouldThrowException_whenStatusIsArchived() {
+    void deleteTask_throwsException_whenStatusIsArchived() {
         String strId = "1cddbd37-6360-4d2a-ba6f-f67d8dc8cfc4";
         UUID id = UUID.fromString(strId);
 
@@ -211,27 +211,27 @@ class TaskServiceUnitTests {
         task.setStatus(TaskStatus.ARCHIVED);
 
         when(validator.checkIdValidity(strId)).thenReturn(id);
-        when(db.findById(id)).thenReturn(Optional.of(task));
+        when(repository.findById(id)).thenReturn(Optional.of(task));
 
         assertThrows(TaskStatusException.class, () -> {
             service.deleteTask(strId);
         });
 
-        verify(db, never()).deleteById(any());
+        verify(repository, never()).deleteById(any());
     }
 
     @Test
-    void deleteTask_shouldThrowException_whenTaskIsNotFound() {
+    void deleteTask_throwsException_whenTaskIsNotFound() {
         String strId = "84d96944-dd31-4e24-ae22-35bb5a193ede";
         UUID id = UUID.fromString(strId);
 
         when(validator.checkIdValidity(strId)).thenReturn(id);
-        when(db.findById(id)).thenReturn(Optional.empty());
+        when(repository.findById(id)).thenReturn(Optional.empty());
 
         assertThrows(TaskNotFoundException.class, () -> {
             service.deleteTask(strId);
         });
 
-        verify(db, never()).deleteById(any());
+        verify(repository, never()).deleteById(any());
     }
 }

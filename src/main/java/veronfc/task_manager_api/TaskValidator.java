@@ -2,7 +2,6 @@ package veronfc.task_manager_api;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 

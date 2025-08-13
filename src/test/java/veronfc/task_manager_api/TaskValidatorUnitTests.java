@@ -22,13 +22,13 @@ import jakarta.validation.ValidationException;
 @ExtendWith(MockitoExtension.class)
 class TaskValidatorUnitTest {
     @Mock
-    TaskRepository db;
+    TaskRepository repository;
 
     @InjectMocks
     TaskValidator validator;
 
     @Test
-    void checkIdValidity_shouldReturnUuid_whenStringIdIsValid() {
+    void checkIdValidity_returnsUuid_whenStringIdIsValid() {
         String strId = "c67f27d7-0ab5-407a-ad59-03710ef90a64";
         UUID id = UUID.fromString(strId);
 
@@ -37,7 +37,7 @@ class TaskValidatorUnitTest {
     }
 
     @Test 
-    void checkIdValidity_shouldThrowException_whenStringIdIsNull() {
+    void checkIdValidity_throwsException_whenStringIdIsNull() {
         String strId = null;
 
         assertThrows(ValidationException.class, () -> {
@@ -46,7 +46,7 @@ class TaskValidatorUnitTest {
     }
 
     @Test 
-    void checkIdValidity_shouldThrowException_whenStringIdIsBlank() {
+    void checkIdValidity_throwsException_whenStringIdIsBlank() {
         String strId = "";
         
         assertThrows(ValidationException.class, () -> {
@@ -55,7 +55,7 @@ class TaskValidatorUnitTest {
     }
 
     @Test
-    void checkIdValidity_shouldThrowException_whenStringIdIsNotCorrectlyFormatted() {
+    void checkIdValidity_throwsException_whenStringIdIsNotCorrectlyFormatted() {
         String strId = "68878689_d401_4ecc_82e2_fcc8787c328e";
 
         assertThrows(ValidationException.class, () -> {
@@ -64,7 +64,7 @@ class TaskValidatorUnitTest {
     }
 
     @Test
-    void checkTitleValidity_shouldDoNothing_whenTaskExistsAndTitleIsUnique() {
+    void checkTitleValidity_doesNothing_whenTaskExistsAndTitleIsUnique() {
         String title = "This title is unique";
         UUID id = UUID.randomUUID();
 
@@ -75,33 +75,33 @@ class TaskValidatorUnitTest {
         Task foundTask = new Task();
         foundTask.setId(id);
 
-        when(db.findByTitle(title)).thenReturn(Optional.of(foundTask));
+        when(repository.findByTitle(title)).thenReturn(Optional.of(foundTask));
 
         assertDoesNotThrow(() -> {
             validator.checkTitleValidity(task);
         });
 
-        verify(db).findByTitle(title);
+        verify(repository).findByTitle(title);
     }
 
     @Test
-    void checkTitleValidity_shouldDoNothing_whenTaskDoesNotExistAndTitleIsUnique() {
+    void checkTitleValidity_doesNothing_whenTaskDoesNotExistAndTitleIsUnique() {
         String title = "This title is also unique";
 
         Task task = new Task();
         task.setTitle(title);
 
-        when(db.findByTitle(title)).thenReturn(Optional.empty());
+        when(repository.findByTitle(title)).thenReturn(Optional.empty());
 
         assertDoesNotThrow(() -> {
             validator.checkTitleValidity(task);
         });
 
-        verify(db).findByTitle(title);
+        verify(repository).findByTitle(title);
     }
 
     @Test
-    void checkTitleValidity_shouldThrowException_whenTaskExistsAndTitleIsNotUnique() {
+    void checkTitleValidity_throwsException_whenTaskExistsAndTitleIsNotUnique() {
         String title = "This title is not unique";
 
         Task task = new Task();
@@ -111,17 +111,17 @@ class TaskValidatorUnitTest {
         Task foundTask = new Task();
         foundTask.setId(UUID.randomUUID());
 
-        when(db.findByTitle(title)).thenReturn(Optional.of(foundTask));
+        when(repository.findByTitle(title)).thenReturn(Optional.of(foundTask));
 
         assertThrows(ValidationException.class, () -> {
             validator.checkTitleValidity(task);
         });
 
-        verify(db).findByTitle(title);
+        verify(repository).findByTitle(title);
     }
 
     @Test
-    void checkDueDateValidity_shouldDoNothing_whenDueDateIsAtleast12HoursInTheFuture() {
+    void checkDueDateValidity_doesNothing_whenDueDateIsAtleast12HoursInTheFuture() {
         LocalDateTime dueDate = LocalDateTime.now().plus(13, ChronoUnit.HOURS);
 
         assertDoesNotThrow(() -> {
@@ -130,7 +130,7 @@ class TaskValidatorUnitTest {
     }
     
     @Test
-    void checkDueDateValidity_shouldThrowException_whenDueDateIsNotAtleast12HoursInTheFuture() {
+    void checkDueDateValidity_throwsException_whenDueDateIsNotAtleast12HoursInTheFuture() {
         LocalDateTime dueDate = LocalDateTime.now().plus(11, ChronoUnit.HOURS);
 
         assertThrows(ValidationException.class, () -> {
