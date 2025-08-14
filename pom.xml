@@ -65,6 +65,10 @@
 			<artifactId>hibernate-validator</artifactId>
 			<version>9.0.1.Final</version>
 		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>

@@ -1,7 +1,7 @@
 # Task Manager API
 A Spring Boot REST API for managing tasks.
 
-Built for learning and demonstrating unit testing practices in Java with Spring.
+Built for learning and demonstrating testing practices in Java with Spring.
 
 ## 🧩 Features (planned)
 - Create, read, update, and delete tasks
@@ -14,9 +14,11 @@ Built for learning and demonstrating unit testing practices in Java with Spring.
 - Java 21
 - Spring Boot
 - Maven
-- JUnit 5, Mockito, AssertJ
-- Spring Test, MockMvc
+- JUnit 5, Mockito
+- Spring Test, MockMvc, AssertJ
+- Lombok
 - H2 Database
+- JaCoCo
 
 ## ❗ Why this project exists
 Task Manager API is a focused learning project to explore unit testing in Java with Spring Boot.

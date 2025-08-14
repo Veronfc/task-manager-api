@@ -42,6 +42,7 @@ class Task {
     @NotNull(message = "Task status must not be empty")
     private TaskStatus status = TaskStatus.BACKLOG;
 
+    @NotNull
     @Future(message = "Task due date must not be in the past or present")
     private LocalDateTime dueDate;
 

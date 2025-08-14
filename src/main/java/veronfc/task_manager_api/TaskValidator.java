@@ -11,10 +11,10 @@ import jakarta.validation.ValidationException;
 
 @Component
 class TaskValidator {
-    private final TaskRepository db;
+    private final TaskRepository repository;
 
-    TaskValidator(TaskRepository db) {
-        this.db = db;
+    TaskValidator(TaskRepository repository) {
+        this.repository = repository;
     }
 
     public UUID checkIdValidity(String strId) {
@@ -32,7 +32,7 @@ class TaskValidator {
     public void checkTitleValidity(Task task) {
         Task foundTask;
 
-        foundTask = db.findByTitle(task.getTitle()).orElse(null);
+        foundTask = repository.findByTitle(task.getTitle()).orElse(null);
 
         if (foundTask != null) {
             if (task.getId() == null || !foundTask.getId().equals(task.getId())) {

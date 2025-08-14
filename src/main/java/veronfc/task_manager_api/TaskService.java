@@ -1,10 +1,12 @@
 package veronfc.task_manager_api;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
 interface ITaskService {
+    public List<Task> retrieveAllTasks();
     public Task createTask(Task task);
     public Task retrieveTask(String id);
     public Task updateTask(Task task);
@@ -19,6 +21,10 @@ class TaskService implements ITaskService {
     TaskService(TaskRepository repository, TaskValidator validator) {
         this.repository = repository;
         this.validator = validator;
+    }
+
+    public List<Task> retrieveAllTasks() {
+        return repository.findAll();
     }
 
     public Task createTask(Task task) {
