@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.times;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -12,10 +14,11 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.mockito.InOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cglib.core.Local;
 import org.springframework.test.annotation.Rollback;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.validation.ValidationException;
@@ -26,7 +29,12 @@ import jakarta.validation.ValidationException;
 @Rollback
 class TaskServiceIntegrationTests {
     @Autowired
+    @MockitoSpyBean
     private TaskRepository repository;
+
+    @Autowired
+    @MockitoSpyBean
+    private TaskValidator validator;
 
     @Autowired
     private TaskService service;
@@ -53,6 +61,11 @@ class TaskServiceIntegrationTests {
         assertEquals(dueDate.truncatedTo(ChronoUnit.SECONDS), created.getDueDate().truncatedTo(ChronoUnit.SECONDS));
 
         assertTrue(repository.findById(created.getId()).isPresent());
+
+        InOrder inOrder = inOrder(repository, validator);
+        inOrder.verify(validator).checkTitleValidity(task);
+        inOrder.verify(validator).checkDueDateValidity(dueDate);
+        inOrder.verify(repository).save(task);
     }
 
     @Test
@@ -72,19 +85,28 @@ class TaskServiceIntegrationTests {
         });
 
         assertEquals(1, repository.count());
+
+        InOrder inOrder = inOrder(validator);
+        inOrder.verify(validator).checkTitleValidity(task);
     }
 
     @Test
     void createTask_throwsException_whenDueDateIsNot12HoursInTheFuture() {
+        LocalDateTime dueDate = LocalDateTime.now();
+
         Task task = new Task();
         task.setTitle("This is a task title");
-        task.setDueDate(LocalDateTime.now());
+        task.setDueDate(dueDate);
 
         assertThrows(ValidationException.class, () -> {
             service.createTask(task);
         });
 
         assertEquals(0, repository.count());
+
+        InOrder inOrder = inOrder(validator);
+        inOrder.verify(validator).checkTitleValidity(task);
+        inOrder.verify(validator).checkDueDateValidity(dueDate);
     }
 
     @Test
@@ -97,8 +119,30 @@ class TaskServiceIntegrationTests {
 
         Task result = service.retrieveTask(task.getId().toString());
         
+        UUID id = result.getId();
+
         assertNotNull(result);
         assertEquals(task, result);
+
+        InOrder inOrder = inOrder(repository, validator);
+        inOrder.verify(validator).checkIdValidity(id.toString());
+        inOrder.verify(repository).findById(id);
+    }
+
+    @Test
+    void retrieveTask_throwsException_whenStringIdInvalid() {
+        String strId = "57881fdc_4a9c_4861_a714_f33d9ef6e79c";
+
+        assertThrows(ValidationException.class, () -> {
+            service.retrieveTask(strId);
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            repository.findById(UUID.fromString(strId));
+        });
+
+        InOrder inOrder = inOrder(validator);
+        inOrder.verify(validator).checkIdValidity(strId);
     }
 
     @Test
@@ -110,6 +154,10 @@ class TaskServiceIntegrationTests {
         });
 
         assertTrue(repository.findById(UUID.fromString(strId)).isEmpty());
+
+        InOrder inOrder = inOrder(repository, validator);
+        inOrder.verify(validator).checkIdValidity(strId);
+        inOrder.verify(repository, times(2)).findById(UUID.fromString(strId));
     }
 
     @Test
@@ -125,6 +173,11 @@ class TaskServiceIntegrationTests {
 
         assertEquals(saved.getTitle(), result.getTitle());
         assertTrue(repository.findById(saved.getId()).isPresent());
+
+        InOrder inOrder = inOrder(repository, validator);
+        inOrder.verify(validator).checkTitleValidity(saved);
+        inOrder.verify(repository).findById(saved.getId());
+        inOrder.verify(repository).save(saved);
     }
 
     @Test
@@ -144,6 +197,9 @@ class TaskServiceIntegrationTests {
         assertThrows(ValidationException.class, () -> {
             service.updateTask(anotherTask);
         });
+
+        InOrder inOrder = inOrder(validator);
+        inOrder.verify(validator).checkTitleValidity(anotherTask);
     }
 
     @Test
@@ -158,6 +214,10 @@ class TaskServiceIntegrationTests {
         assertThrows(TaskStatusException.class, () -> {
             service.updateTask(saved);
         });
+
+        InOrder inOrder = inOrder(repository, validator);
+        inOrder.verify(validator).checkTitleValidity(saved);
+        inOrder.verify(repository).findById(saved.getId());
     }
 
     @Test
@@ -169,6 +229,10 @@ class TaskServiceIntegrationTests {
         assertThrows(TaskNotFoundException.class, () -> {
             service.updateTask(task);
         });
+
+        InOrder inOrder = inOrder(repository, validator);
+        inOrder.verify(validator).checkTitleValidity(task);
+        inOrder.verify(repository).findById(task.getId());
     }
 
     @Test
@@ -182,6 +246,11 @@ class TaskServiceIntegrationTests {
         service.deleteTask(id.toString());
 
         assertTrue(repository.findById(id).isEmpty());
+
+        InOrder inOrder = inOrder(repository, validator);
+        inOrder.verify(validator).checkIdValidity(id.toString());
+        inOrder.verify(repository).findById(task.getId());
+        inOrder.verify(repository).deleteById(id);
     }
 
     @Test
@@ -198,6 +267,10 @@ class TaskServiceIntegrationTests {
         });
 
         assertTrue(repository.findById(id).isPresent());
+
+        InOrder inOrder = inOrder(repository, validator);
+        inOrder.verify(validator).checkIdValidity(id.toString());
+        inOrder.verify(repository, times(2)).findById(task.getId());
     }
 
     @Test
@@ -209,5 +282,9 @@ class TaskServiceIntegrationTests {
         });
 
         assertTrue(repository.findById(UUID.fromString(strId)).isEmpty());
+
+        InOrder inOrder = inOrder(repository, validator);
+        inOrder.verify(validator).checkIdValidity(strId);
+        inOrder.verify(repository, times(2)).findById(UUID.fromString(strId));
     }
 }

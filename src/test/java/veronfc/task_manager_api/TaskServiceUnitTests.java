@@ -97,6 +97,19 @@ class TaskServiceUnitTests {
     }
 
     @Test
+    void retrieveTask_throwsException_whenStringIdIsInvalid() {
+        String strId = "5e33ee4b+92f3+405a+a0db+01e18141b574";
+
+        doThrow(new ValidationException("Task ID must be a UUID")).when(validator).checkIdValidity(strId);
+
+        assertThrows(ValidationException.class, () -> {
+            service.retrieveTask(strId);
+        });
+
+        verify(repository, never()).findById(any());
+    }
+
+    @Test
     void retrieveTask_throwsException_whenTaskIsNotFound() {
         String strId = "aa07cf6a-127a-43a8-bb54-4d45b76e6e73";
         UUID id = UUID.fromString(strId);
