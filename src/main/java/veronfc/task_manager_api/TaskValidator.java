@@ -29,13 +29,13 @@ class TaskValidator {
         }
     }
 
-    public void checkTitleValidity(Task task) {
+    public void checkTitleValidity(String title, String strId) {
         Task foundTask;
 
-        foundTask = repository.findByTitle(task.getTitle()).orElse(null);
+        foundTask = repository.findByTitle(title).orElse(null);
 
         if (foundTask != null) {
-            if (task.getId() == null || !foundTask.getId().equals(task.getId())) {
+            if (strId == null || !foundTask.getId().equals(UUID.fromString(strId))) {
                 throw new ValidationException("Task title must be unique");
             }
         }

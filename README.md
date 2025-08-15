@@ -4,9 +4,10 @@ A Spring Boot REST API for managing tasks.
 Built for learning and demonstrating testing practices in Java with Spring.
 
 ## 🧩 Features (planned)
-- Create, read, update, and delete tasks
-- Validation and error handling
-- Unit, slice, and integration tests
+- ✅ Create, read, update, and delete tasks
+- ✅ Validation and error handling
+- ✅ Unit and integration tests
+- Slice tests
 - CI with GitHub Actions
 - Code coverage reporting with JaCoCo
 

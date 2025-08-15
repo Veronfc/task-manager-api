@@ -1,12 +1,9 @@
 package veronfc.task_manager_api;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.rmi.ServerException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,24 +65,25 @@ class TaskControllerUnitTests {
     }
     
     @Test
-    void postTask_returnCreatedTask_whenTaskIsValid() throws Exception {
-        String strId = "111bdc41-5a08-47bd-8553-df9a043e836a";
+    void postTask_returnsCreatedTask_whenTaskIsValid() throws Exception {
         String title = "This is a title";
         LocalDateTime dueDate = LocalDateTime.now().plusHours(13);
         
-        Task task = new Task();
-        task.setId(UUID.fromString(strId));
+        CreateTaskDto task = new CreateTaskDto();
         task.setTitle(title);
         task.setDueDate(dueDate);
+
+        Task createdTask = new Task();
+        createdTask.setTitle(title);
+        createdTask.setDueDate(dueDate);
         
-        when(service.createTask(task)).thenReturn(task);
+        when(service.createTask(task)).thenReturn(createdTask);
         
         mockMvc.perform(post("/")
         .contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(task)))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.id").value(strId))
         .andExpect(jsonPath("$.title").value(title));
         
         verify(service).createTask(task);
@@ -93,7 +91,7 @@ class TaskControllerUnitTests {
     
     @Test
     void postTask_returnsBadRequest_whenTitleIsNotUniqueOrDueDateNotAtLeast12HoursInFuture() throws Exception {
-        Task task = new Task();
+        CreateTaskDto task = new CreateTaskDto("This is a title", LocalDateTime.now().plusHours(6));
         
         when(service.createTask(task)).thenThrow(new ValidationException());
         
@@ -107,7 +105,7 @@ class TaskControllerUnitTests {
     
     @Test
     void postTask_returnsServerError_whenUnhandledExceptionIsThrown() throws Exception {
-        Task task = new Task();
+        CreateTaskDto task = new CreateTaskDto("This is a title", LocalDateTime.now().plusHours(4));
         
         when(service.createTask(task)).thenThrow(new RuntimeException());
         
@@ -176,15 +174,17 @@ class TaskControllerUnitTests {
     }
 
     @Test
-    void updateTask_returnsTask_whenUpdatedTaskIsValid() throws Exception {
+    void putTask_returnsTask_whenUpdatedTaskIsValid() throws Exception {
         UUID id = UUID.randomUUID();
-        String title = "This is a task title";
 
-        Task task = new Task();
+        UpdateTaskDto task = new UpdateTaskDto();
         task.setId(id);
-        task.setTitle(title);
 
-        when(service.updateTask(task)).thenReturn(task);
+        Task updatedTask = new Task();
+        updatedTask.setId(id);
+        updatedTask.setTitle("This is an updated title");
+
+        when(service.updateTask(task)).thenReturn(updatedTask);
 
         mockMvc.perform(put("/")
             .contentType(MediaType.APPLICATION_JSON)
@@ -192,14 +192,15 @@ class TaskControllerUnitTests {
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.id").value(id.toString()))
-            .andExpect(jsonPath("$.title").value(title));
+            .andExpect(jsonPath("$.title").value("This is an updated title"));
 
         verify(service).updateTask(task);
     }
 
     @Test
-    void updateTask_returnsBadRequest_whenIdIsInvalid() throws Exception {
-        Task task = new Task();
+    void putTask_returnsBadRequest_whenTitleIsNotUnique() throws Exception {
+        UpdateTaskDto task = new UpdateTaskDto();
+        task.setId(UUID.randomUUID());
 
         when (service.updateTask(task)).thenThrow(new ValidationException());
 
@@ -212,8 +213,9 @@ class TaskControllerUnitTests {
     }
 
     @Test
-    void updateTask_returnsNotFound_whenTaskIsNotFound() throws Exception {
-        Task task = new Task();
+    void putTask_returnsNotFound_whenTaskIsNotFound() throws Exception {
+        UpdateTaskDto task = new UpdateTaskDto();
+        task.setId(UUID.randomUUID());
 
         when (service.updateTask(task)).thenThrow(new TaskNotFoundException(null));
 
@@ -226,8 +228,9 @@ class TaskControllerUnitTests {
     }
 
     @Test
-    void updateTask_returnsConflict_whenTaskIsComplete() throws Exception {
-        Task task = new Task();
+    void putTask_returnsConflict_whenTaskIsComplete() throws Exception {
+        UpdateTaskDto task = new UpdateTaskDto();
+        task.setId(UUID.randomUUID());
 
         when (service.updateTask(task)).thenThrow(new TaskStatusException(null));
 
@@ -240,8 +243,9 @@ class TaskControllerUnitTests {
     }
 
     @Test
-    void updateTask_returnsServerError_whenUnhandledExceptionIsThrown() throws Exception {
-        Task task = new Task();
+    void putTask_returnsServerError_whenUnhandledExceptionIsThrown() throws Exception {
+        UpdateTaskDto task = new UpdateTaskDto();
+        task.setId(UUID.randomUUID());
 
         when (service.updateTask(task)).thenThrow(new RuntimeException());
 

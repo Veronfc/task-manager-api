@@ -34,26 +34,35 @@ class TaskServiceUnitTests {
 
     @Test
     void createTask_persistsTask_whenTitleIsUniqueAndDueDateIsAtleast12HoursInFuture() {
+        String title = "This is a unique title";
         LocalDateTime dueDate = LocalDateTime.now();
 
-        Task task = new Task();
+        Task createdTask = new Task();
+        createdTask.setTitle(title);
+        createdTask.setDueDate(dueDate);
+
+        CreateTaskDto task = new CreateTaskDto();
+        task.setTitle(title);
         task.setDueDate(dueDate);
 
-        doNothing().when(validator).checkTitleValidity(task);
+        doNothing().when(validator).checkTitleValidity(title, null);
         doNothing().when(validator).checkDueDateValidity(dueDate);
-        when(repository.save(task)).thenReturn(task);
+        when(repository.save(createdTask)).thenReturn(createdTask);
 
         Task result = service.createTask(task);
-        assertEquals(task, result);
+        assertEquals(createdTask, result);
 
-        verify(repository).save(task);
+        verify(repository).save(createdTask);
     }
 
     @Test
     void createTask_throwsException_whenTitleIsNotUnique() {
-        Task task = new Task();
+        String title = "This title is not unique";
 
-        doThrow(new ValidationException("Task title must be unique")).when(validator).checkTitleValidity(task);
+        CreateTaskDto task = new CreateTaskDto();
+        task.setTitle(title);
+
+        doThrow(new ValidationException("Task title must be unique")).when(validator).checkTitleValidity(title, null);
 
         assertThrows(ValidationException.class, () -> {
             service.createTask(task);
@@ -66,10 +75,9 @@ class TaskServiceUnitTests {
     void createTask_throwsException_whenDueDateIsNot12HoursInFuture() {
         LocalDateTime dueDate = LocalDateTime.now();
 
-        Task task = new Task();
+        CreateTaskDto task = new CreateTaskDto();
         task.setDueDate(dueDate);
 
-        doNothing().when(validator).checkTitleValidity(task);
         doThrow(new ValidationException("Task due date must be at least 12 hours in the future")).when(validator)
                 .checkDueDateValidity(dueDate);
 
@@ -127,31 +135,40 @@ class TaskServiceUnitTests {
     @Test
     void updateTask_persistsUpdatedTask_whenTitleIsUniqueAndStatusIsNotComplete() {
         UUID id = UUID.randomUUID();
+        String title = "This is a unique title";
 
-        Task updatedTask = new Task();
+        UpdateTaskDto updatedTask = new UpdateTaskDto();
         updatedTask.setId(id);
+        updatedTask.setTitle(title);
 
         Task task = new Task();
+        task.setId(id);
+        task.setTitle("This is a title");
         task.setStatus(TaskStatus.IN_PROGRESS);
 
-        doNothing().when(validator).checkTitleValidity(updatedTask);
+        doNothing().when(validator).checkTitleValidity(title, id.toString());
         when(repository.findById(id)).thenReturn(Optional.of(task));
-        when(repository.save(updatedTask)).thenReturn(updatedTask);
+
+        task.setTitle(title);
+
+        when(repository.save(task)).thenReturn(task);
 
         Task result = service.updateTask(updatedTask);
-        assertEquals(updatedTask, result);
+        assertEquals(task, result);
 
-        verify(repository).save(updatedTask);
+        verify(repository).save(task);
     }
 
     @Test
     void updateTask_throwsException_whenTitleIsNotUnique() {
         UUID id = UUID.randomUUID();
+        String title = "This is not a unique title";
 
-        Task updatedTask = new Task();
+        UpdateTaskDto updatedTask = new UpdateTaskDto();
         updatedTask.setId(id);
+        updatedTask.setTitle(title);
 
-        doThrow(new ValidationException("Task title must be unique")).when(validator).checkTitleValidity(updatedTask);
+        doThrow(new ValidationException("Task title must be unique")).when(validator).checkTitleValidity(title, id.toString());
 
         assertThrows(ValidationException.class, () -> {
             service.updateTask(updatedTask);
@@ -164,13 +181,12 @@ class TaskServiceUnitTests {
     void updateTask_throwsException_whenStatusIsComplete() {
         UUID id = UUID.randomUUID();
 
-        Task updatedTask = new Task();
+        UpdateTaskDto updatedTask = new UpdateTaskDto();
         updatedTask.setId(id);
 
         Task task = new Task();
         task.setStatus(TaskStatus.COMPLETE);
 
-        doNothing().when(validator).checkTitleValidity(updatedTask);
         when(repository.findById(id)).thenReturn(Optional.of(task));
 
         assertThrows(TaskStatusException.class, () -> {
@@ -184,10 +200,9 @@ class TaskServiceUnitTests {
     void updateTask_throwsException_whenTaskIsNotFound() {
         UUID id = UUID.randomUUID();
 
-        Task updatedTask = new Task();
+        UpdateTaskDto updatedTask = new UpdateTaskDto();
         updatedTask.setId(id);
 
-        doNothing().when(validator).checkTitleValidity(updatedTask);
         when(repository.findById(id)).thenReturn(Optional.empty());
 
         assertThrows(TaskNotFoundException.class, () -> {

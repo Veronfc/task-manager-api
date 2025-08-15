@@ -65,12 +65,8 @@ class TaskValidatorUnitTest {
 
     @Test
     void checkTitleValidity_doesNothing_whenTaskExistsAndTitleIsUnique() {
-        String title = "This title is unique";
         UUID id = UUID.randomUUID();
-
-        Task task = new Task();
-        task.setTitle(title);
-        task.setId(id);
+        String title = "This title is unique";
 
         Task foundTask = new Task();
         foundTask.setId(id);
@@ -78,7 +74,7 @@ class TaskValidatorUnitTest {
         when(repository.findByTitle(title)).thenReturn(Optional.of(foundTask));
 
         assertDoesNotThrow(() -> {
-            validator.checkTitleValidity(task);
+            validator.checkTitleValidity(title, id.toString());
         });
 
         verify(repository).findByTitle(title);
@@ -88,13 +84,10 @@ class TaskValidatorUnitTest {
     void checkTitleValidity_doesNothing_whenTaskDoesNotExistAndTitleIsUnique() {
         String title = "This title is also unique";
 
-        Task task = new Task();
-        task.setTitle(title);
-
         when(repository.findByTitle(title)).thenReturn(Optional.empty());
 
         assertDoesNotThrow(() -> {
-            validator.checkTitleValidity(task);
+            validator.checkTitleValidity(title, null);
         });
 
         verify(repository).findByTitle(title);
@@ -102,11 +95,8 @@ class TaskValidatorUnitTest {
 
     @Test
     void checkTitleValidity_throwsException_whenTaskExistsAndTitleIsNotUnique() {
+        UUID id = UUID.randomUUID();
         String title = "This title is not unique";
-
-        Task task = new Task();
-        task.setId(UUID.randomUUID());
-        task.setTitle(title);
 
         Task foundTask = new Task();
         foundTask.setId(UUID.randomUUID());
@@ -114,7 +104,7 @@ class TaskValidatorUnitTest {
         when(repository.findByTitle(title)).thenReturn(Optional.of(foundTask));
 
         assertThrows(ValidationException.class, () -> {
-            validator.checkTitleValidity(task);
+            validator.checkTitleValidity(title, id.toString());
         });
 
         verify(repository).findByTitle(title);

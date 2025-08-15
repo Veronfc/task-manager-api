@@ -1,9 +1,8 @@
 package veronfc.task_manager_api;
 
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
-import jakarta.validation.ValidationException;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -27,75 +26,27 @@ class TaskController {
 
     @GetMapping("all")
     List<Task> getAllTasks() {
-        try {
-            return service.retrieveAllTasks();
-        } catch (Exception ex) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
-        }
+        return service.retrieveAllTasks();
     }
     
     @PostMapping
-    Task postTask(@RequestBody Task task) {
-        try {
-            return service.createTask(task);
-        } catch (Exception ex) {
-            if (ex instanceof ValidationException) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
-            }
-
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
-        }
+    Task postTask(@Valid @RequestBody CreateTaskDto task) {
+        return service.createTask(task);
     }
 
     @GetMapping("{id}")
     Task getTask(@PathVariable String id) {
-        try {
-            return service.retrieveTask(id);
-        } catch (Exception ex) {
-            if (ex instanceof ValidationException) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
-            }
-
-            if (ex instanceof TaskNotFoundException) {
-                throw ex;
-            }
-            
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
-        }
+        return service.retrieveTask(id);
     }
     
     @PutMapping
-    Task putTask(@RequestBody Task task) {
-        try {
-            return service.updateTask(task);
-        } catch (Exception ex) {
-            if (ex instanceof ValidationException) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
-            }
-
-            if (ex instanceof TaskNotFoundException || ex instanceof TaskStatusException) {
-                throw ex;
-            }
-
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
-        }
+    Task putTask(@Valid @RequestBody UpdateTaskDto task) {
+        return service.updateTask(task);
     }
 
     @DeleteMapping("{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void deleteTask(@PathVariable String id) {
-        try {
-            service.deleteTask(id);
-        } catch (Exception ex) {
-            if (ex instanceof TaskNotFoundException || ex instanceof TaskStatusException) {
-                throw ex;
-            }
-
-            if (ex instanceof ValidationException) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
-            }
-
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
-        }
+        service.deleteTask(id);
     }
 }

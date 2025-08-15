@@ -43,40 +43,42 @@ class TaskServiceIntegrationTests {
     void createTask_persistsTask_whenTaskIsValid() {
         String title = "This is a task title";
         String description = "This is a task description";
-        LocalDateTime dueDate = LocalDateTime.now().plus(2, ChronoUnit.DAYS);
+        LocalDateTime dueDate = LocalDateTime.now().plusDays(2);
 
-        Task task = new Task();
+        CreateTaskDto task = new CreateTaskDto();
         task.setTitle(title);
         task.setDescription(description);
-        task.setStatus(TaskStatus.BACKLOG);
         task.setDueDate(dueDate);
 
-        Task created = service.createTask(task);
+        Task createdTask = service.createTask(task);
 
-        assertNotNull(created);
+        assertNotNull(createdTask);
 
-        assertEquals(title, created.getTitle());
-        assertEquals(description, created.getDescription());
-        assertEquals(TaskStatus.BACKLOG, created.getStatus());
-        assertEquals(dueDate.truncatedTo(ChronoUnit.SECONDS), created.getDueDate().truncatedTo(ChronoUnit.SECONDS));
+        assertEquals(title, createdTask.getTitle());
+        assertEquals(description, createdTask.getDescription());
+        assertEquals(TaskStatus.BACKLOG, createdTask.getStatus());
+        assertEquals(dueDate.truncatedTo(ChronoUnit.SECONDS), createdTask.getDueDate().truncatedTo(ChronoUnit.SECONDS));
 
-        assertTrue(repository.findById(created.getId()).isPresent());
+        assertTrue(repository.findById(createdTask.getId()).isPresent());
 
         InOrder inOrder = inOrder(repository, validator);
-        inOrder.verify(validator).checkTitleValidity(task);
+        inOrder.verify(validator).checkTitleValidity(title, null);
         inOrder.verify(validator).checkDueDateValidity(dueDate);
-        inOrder.verify(repository).save(task);
+        inOrder.verify(repository).save(createdTask);
     }
 
     @Test
     void createTask_throwsException_whenTitleIsNotUnique() {
-        Task task = new Task();
-        task.setTitle("This is not a unique title");
-        task.setDueDate(LocalDateTime.now().plus(24, ChronoUnit.HOURS));
+        String title = "This is not a unique title";
+        LocalDateTime dueDate = LocalDateTime.now().plusHours(24);
 
-        Task anotherTask = new Task();
-        anotherTask.setTitle("This is not a unique title");
-        anotherTask.setDueDate(LocalDateTime.now().plus(24, ChronoUnit.HOURS));
+        CreateTaskDto task = new CreateTaskDto();
+        task.setTitle(title);
+        task.setDueDate(dueDate);
+
+        CreateTaskDto anotherTask = new CreateTaskDto();
+        anotherTask.setTitle(title);
+        anotherTask.setDueDate(dueDate);
 
         service.createTask(task);
 
@@ -87,15 +89,16 @@ class TaskServiceIntegrationTests {
         assertEquals(1, repository.count());
 
         InOrder inOrder = inOrder(validator);
-        inOrder.verify(validator).checkTitleValidity(task);
+        inOrder.verify(validator).checkTitleValidity(title, null);
     }
 
     @Test
     void createTask_throwsException_whenDueDateIsNot12HoursInTheFuture() {
+        String title = "This is a task title";
         LocalDateTime dueDate = LocalDateTime.now();
 
-        Task task = new Task();
-        task.setTitle("This is a task title");
+        CreateTaskDto task = new CreateTaskDto();
+        task.setTitle(title);
         task.setDueDate(dueDate);
 
         assertThrows(ValidationException.class, () -> {
@@ -105,7 +108,7 @@ class TaskServiceIntegrationTests {
         assertEquals(0, repository.count());
 
         InOrder inOrder = inOrder(validator);
-        inOrder.verify(validator).checkTitleValidity(task);
+        inOrder.verify(validator).checkTitleValidity(title, null);
         inOrder.verify(validator).checkDueDateValidity(dueDate);
     }
 
@@ -113,7 +116,7 @@ class TaskServiceIntegrationTests {
     void retrieveTask_returnsTask_whenTaskExists() {
         Task task = new Task();
         task.setTitle("This is yet another title");
-        task.setDueDate(LocalDateTime.now().plus(3, ChronoUnit.DAYS));
+        task.setDueDate(LocalDateTime.now().plusDays(3));
 
         repository.save(task);
 
@@ -165,31 +168,36 @@ class TaskServiceIntegrationTests {
         Task task = new Task();
         task.setTitle("This is a title too");
         task.setDueDate(LocalDateTime.now().plus(24, ChronoUnit.HOURS));
+        task = repository.save(task);
 
-        Task saved = repository.save(task);
-        saved.setTitle("This is some other title");
+        UpdateTaskDto updatedTask = new UpdateTaskDto();
+        updatedTask.setId(task.getId());
+        updatedTask.setTitle("This is some other title");
 
-        Task result = service.updateTask(saved);
+        task.setTitle("This is some other title");
 
-        assertEquals(saved.getTitle(), result.getTitle());
-        assertTrue(repository.findById(saved.getId()).isPresent());
+        Task result = service.updateTask(updatedTask);
+
+        assertEquals(updatedTask.getTitle(), result.getTitle());
+        assertTrue(repository.findById(updatedTask.getId()).isPresent());
 
         InOrder inOrder = inOrder(repository, validator);
-        inOrder.verify(validator).checkTitleValidity(saved);
-        inOrder.verify(repository).findById(saved.getId());
-        inOrder.verify(repository).save(saved);
+        inOrder.verify(validator).checkTitleValidity(updatedTask.getTitle(), updatedTask.getId().toString());
+        inOrder.verify(repository).findById(updatedTask.getId());
+        inOrder.verify(repository).save(task);
     }
 
     @Test
     void updateTask_throwsException_whenTitleIsNotUnique() {
         String title = "This is another title";
-        LocalDateTime dueDate = LocalDateTime.now().plus(24, ChronoUnit.HOURS);
+        LocalDateTime dueDate = LocalDateTime.now().plusHours(24);
 
         Task task = new Task();
         task.setTitle(title);
         task.setDueDate(dueDate);
 
-        Task anotherTask = new Task();
+        UUID id = UUID.randomUUID();
+        UpdateTaskDto anotherTask = new UpdateTaskDto(id);
         anotherTask.setTitle(title);
 
         repository.save(task);
@@ -199,40 +207,40 @@ class TaskServiceIntegrationTests {
         });
 
         InOrder inOrder = inOrder(validator);
-        inOrder.verify(validator).checkTitleValidity(anotherTask);
+        inOrder.verify(validator).checkIdValidity(id.toString());
+        inOrder.verify(validator).checkTitleValidity(title, id.toString());
     }
 
     @Test
     void updateTask_throwsException_whenStatusIsComplete() {
         Task task = new Task();
         task.setTitle("This is an additional title");
-        task.setDueDate(LocalDateTime.now().plus(24, ChronoUnit.HOURS));
         task.setStatus(TaskStatus.COMPLETE);
+        task.setDueDate(LocalDateTime.now().plusHours(24));
+        task = repository.save(task);
 
-        Task saved = repository.save(task);
+        UpdateTaskDto updatedTask = new UpdateTaskDto();
+        updatedTask.setId(task.getId());
 
         assertThrows(TaskStatusException.class, () -> {
-            service.updateTask(saved);
+            service.updateTask(updatedTask);
         });
 
         InOrder inOrder = inOrder(repository, validator);
-        inOrder.verify(validator).checkTitleValidity(saved);
-        inOrder.verify(repository).findById(saved.getId());
+        inOrder.verify(repository).findById(updatedTask.getId());
     }
 
     @Test
     void updateTask_throwsException_whenTaskIsNotFound() {
-        Task task = new Task();
-        task.setId(UUID.randomUUID());
-        task.setTitle("This is an additional title");
+        UpdateTaskDto updatedTask = new UpdateTaskDto();
+        updatedTask.setId(UUID.randomUUID());
 
         assertThrows(TaskNotFoundException.class, () -> {
-            service.updateTask(task);
+            service.updateTask(updatedTask);
         });
 
         InOrder inOrder = inOrder(repository, validator);
-        inOrder.verify(validator).checkTitleValidity(task);
-        inOrder.verify(repository).findById(task.getId());
+        inOrder.verify(repository).findById(updatedTask.getId());
     }
 
     @Test
