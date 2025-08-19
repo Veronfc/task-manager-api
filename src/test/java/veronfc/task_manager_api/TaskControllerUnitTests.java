@@ -29,7 +29,7 @@ class TaskControllerUnitTests {
     private MockMvc mockMvc;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private ObjectMapper mapper;
 
     @MockitoBean
     private TaskService service;
@@ -81,7 +81,7 @@ class TaskControllerUnitTests {
         
         mockMvc.perform(post("/")
         .contentType(MediaType.APPLICATION_JSON)
-        .content(objectMapper.writeValueAsString(task)))
+        .content(mapper.writeValueAsString(task)))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.title").value(title));
@@ -97,7 +97,7 @@ class TaskControllerUnitTests {
         
         mockMvc.perform(post("/")
         .contentType(MediaType.APPLICATION_JSON)
-        .content(objectMapper.writeValueAsString(task)))
+        .content(mapper.writeValueAsString(task)))
         .andExpect(status().isBadRequest());
 
         verify(service).createTask(task);
@@ -111,7 +111,7 @@ class TaskControllerUnitTests {
         
         mockMvc.perform(post("/")
         .contentType(MediaType.APPLICATION_JSON)
-        .content(objectMapper.writeValueAsString(task)))
+        .content(mapper.writeValueAsString(task)))
         .andExpect(status().isInternalServerError());
 
         verify(service).createTask(task);
@@ -188,7 +188,7 @@ class TaskControllerUnitTests {
 
         mockMvc.perform(put("/")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(task)))
+            .content(mapper.writeValueAsString(task)))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.id").value(id.toString()))
@@ -206,7 +206,7 @@ class TaskControllerUnitTests {
 
         mockMvc.perform(put("/")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(task)))
+            .content(mapper.writeValueAsString(task)))
             .andExpect(status().isBadRequest());
 
         verify(service).updateTask(task);
@@ -221,7 +221,7 @@ class TaskControllerUnitTests {
 
         mockMvc.perform(put("/")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(task)))
+            .content(mapper.writeValueAsString(task)))
             .andExpect(status().isNotFound());
 
         verify(service).updateTask(task);
@@ -236,7 +236,7 @@ class TaskControllerUnitTests {
 
         mockMvc.perform(put("/")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(task)))
+            .content(mapper.writeValueAsString(task)))
             .andExpect(status().isConflict());
 
         verify(service).updateTask(task);
@@ -251,7 +251,7 @@ class TaskControllerUnitTests {
 
         mockMvc.perform(put("/")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(task)))
+            .content(mapper.writeValueAsString(task)))
             .andExpect(status().isInternalServerError());
 
         verify(service).updateTask(task);
